@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #E4E3E0;
+  --ink: #141414;
+  --line: #141414;
+  --f-mono: 'Courier New', Courier, monospace;
+}
+
+.data-grid-border {
+  border: 1px solid var(--line);
+}
+
+.mono {
+  font-family: var(--f-mono);
+}
+
+.header-gradient {
+  background: linear-gradient(90deg, #141414 0%, #333333 100%);
+}
+
+.severity-high {
+  color: #D00;
+  font-weight: 800;
+}
+
+.severity-normal {
+  color: #080;
+  font-weight: 800;
+}
+
+/* Dense engineering table and scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #E4E3E0;
+}
+::-webkit-scrollbar-thumb {
+  background: #141414;
+}
