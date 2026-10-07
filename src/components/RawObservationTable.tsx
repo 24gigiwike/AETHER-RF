@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { RawWiFiObservation } from '../types/wifi';
-import { Search, Filter, ArrowUpDown, Lock, Unlock, Radio } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Lock, Unlock, Radio, Signal, Clock } from 'lucide-react';
 
 interface RawObservationTableProps {
   observations: RawWiFiObservation[];
   batchId: string;
+  isScanning: boolean;
 }
 
 export const RawObservationTable: React.FC<RawObservationTableProps> = ({
   observations,
   batchId,
+  isScanning,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChannelFilter, setSelectedChannelFilter] = useState<string>('ALL');
@@ -45,41 +47,43 @@ export const RawObservationTable: React.FC<RawObservationTableProps> = ({
       setSortAsc(!sortAsc);
     } else {
       setSortField(field);
-      setSortAsc(field !== 'rssi'); // default rssi descending (strongest first)
+      setSortAsc(field !== 'rssi');
     }
   };
 
   // Signal level color helper
   const getRssiColor = (rssi: number) => {
-    if (rssi >= -55) return 'text-emerald-600 font-semibold';
-    if (rssi >= -70) return 'text-blue-600 font-medium';
-    if (rssi >= -82) return 'text-amber-600';
-    return 'text-rose-600';
+    if (rssi >= -55) return 'text-emerald-700 font-bold';
+    if (rssi >= -70) return 'text-blue-700 font-bold';
+    if (rssi >= -82) return 'text-amber-700 font-medium';
+    return 'text-rose-700';
   };
 
-  // Visual RSSI strength bar percentage
   const getRssiPercent = (rssi: number) => {
-    // -100 dBm is 0%, -30 dBm is 100%
     const pct = ((rssi - -100) / 70) * 100;
     return Math.max(5, Math.min(100, Math.round(pct)));
   };
 
+  const formatSecurity = (sec: string) => {
+    return sec.replace('_PSK', '').replace('_', '/');
+  };
+
   return (
-    <section id="raw-wifi-observations" className="bg-white border border-[#141414] p-3.5 space-y-3">
+    <section id="raw-wifi-observations" className="bg-white border border-[#141414] p-3.5 space-y-3 font-mono">
       {/* Header with Title and Classification Tag */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#141414] pb-2">
         <div>
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#141414]" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#141414] font-mono">
-              Raw 802.11 Wi-Fi Observation Stream
+            <Radio className={`w-4 h-4 ${isScanning ? 'text-amber-500 animate-spin' : 'text-[#141414]'}`} />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#141414]">
+              Discovered Wi-Fi Networks ({observations.length} Access Points Active)
             </h2>
-            <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-[#141414] text-white font-bold">
-              Physical Sensor Layer
+            <span className="text-[9px] uppercase px-2 py-0.5 bg-[#141414] text-white font-bold">
+              Real-Time Feed
             </span>
           </div>
-          <p className="text-[10px] text-neutral-600 font-mono mt-0.5">
-            Active Batch: {batchId} ({observations.length} discrete BSSID records captured)
+          <p className="text-[10px] text-neutral-600 mt-0.5">
+            Active Scan Batch: {batchId} &bull; Live RSSI tracking with IEEE 802.11 beacon verification
           </p>
         </div>
 
@@ -93,159 +97,139 @@ export const RawObservationTable: React.FC<RawObservationTableProps> = ({
               placeholder="Filter SSID / BSSID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="text-xs font-mono pl-7 pr-2.5 py-1 bg-white border border-[#141414] text-[#141414] w-44 focus:outline-none focus:ring-1 focus:ring-[#141414]"
+              className="text-xs pl-7 pr-2.5 py-1 bg-white border border-[#141414] text-[#141414] w-44 focus:outline-none focus:ring-1 focus:ring-[#141414]"
             />
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-[#141414]" />
+            <Filter className="w-3.5 h-3.5 text-neutral-500" />
             <select
-              id="select-filter-channel"
+              id="select-channel-filter"
               value={selectedChannelFilter}
               onChange={(e) => setSelectedChannelFilter(e.target.value)}
-              className="text-xs font-mono bg-white border border-[#141414] px-2 py-1 text-[#141414] focus:outline-none"
+              className="text-xs bg-white border border-[#141414] py-1 px-2 text-[#141414] cursor-pointer"
             >
-              <option value="ALL">All Ch (1-14)</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((ch) => (
-                <option key={ch} value={ch.toString()}>
-                  Ch {ch}
-                </option>
-              ))}
+              <option value="ALL">All Channels</option>
+              <option value="1">Channel 1</option>
+              <option value="6">Channel 6</option>
+              <option value="11">Channel 11</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Raw Observation Data Table */}
+      {/* Main Table */}
       <div className="overflow-x-auto border border-[#141414]">
-        <table id="raw-observations-table" className="w-full text-left text-[11px] font-mono">
-          <thead className="bg-neutral-100 text-[#141414] border-b border-[#141414]">
-            <tr>
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="bg-neutral-100 border-b border-[#141414] text-[10px] uppercase font-bold text-[#141414]">
               <th
                 onClick={() => toggleSort('ssid')}
-                className="py-1.5 px-2.5 font-bold uppercase text-[10px] cursor-pointer hover:bg-neutral-200 select-none"
+                className="p-2 cursor-pointer hover:bg-neutral-200 border-r border-[#141414]"
               >
                 <div className="flex items-center gap-1">
-                  <span>SSID (Network Name)</span>
+                  <span>SSID (Network)</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
                 </div>
               </th>
-              <th className="py-1.5 px-2.5 font-bold uppercase text-[10px]">BSSID (MAC Address)</th>
+              <th className="p-2 border-r border-[#141414]">BSSID (MAC Address)</th>
               <th
                 onClick={() => toggleSort('channel')}
-                className="py-1.5 px-2.5 font-bold uppercase text-[10px] cursor-pointer hover:bg-neutral-200 select-none"
+                className="p-2 cursor-pointer hover:bg-neutral-200 border-r border-[#141414] text-center w-24"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   <span>Channel</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
                 </div>
               </th>
               <th
                 onClick={() => toggleSort('rssi')}
-                className="py-1.5 px-2.5 font-bold uppercase text-[10px] cursor-pointer hover:bg-neutral-200 select-none"
+                className="p-2 cursor-pointer hover:bg-neutral-200 border-r border-[#141414] text-right w-48"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-end gap-1">
                   <span>RSSI (dBm)</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
                 </div>
               </th>
-              <th className="py-1.5 px-2.5 font-bold uppercase text-[10px]">Security Cipher</th>
-              <th className="py-1.5 px-2.5 font-bold uppercase text-[10px]">Provenance</th>
-              <th className="py-1.5 px-2.5 font-bold uppercase text-[10px] text-right">Captured Timestamp</th>
+              <th className="p-2 border-r border-[#141414] text-center w-28">Security</th>
+              <th className="p-2 text-right w-24">Last Seen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/10">
+          <tbody className="divide-y divide-neutral-200">
             {filteredObservations.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-neutral-500 font-mono">
-                  No Wi-Fi observations match the current filter criteria.
+                <td colSpan={6} className="p-4 text-center text-neutral-500 italic">
+                  No access points match the filter criteria.
                 </td>
               </tr>
             ) : (
               filteredObservations.map((obs) => {
-                const rssiPct = getRssiPercent(obs.rssi);
-                const isNonStdChannel = ![1, 6, 11].includes(obs.channel);
-                const isOpenAuth = obs.securityType === 'OPEN';
-
+                const isNonOverlapping = [1, 6, 11].includes(obs.channel);
                 return (
-                  <tr key={obs.id} className="hover:bg-neutral-100 transition-colors">
+                  <tr key={obs.id} className="hover:bg-neutral-50 transition-colors">
                     {/* SSID */}
-                    <td className="py-1.5 px-2.5 font-mono font-bold text-[#141414]">
+                    <td className="p-2 border-r border-[#141414] font-bold text-[#141414]">
                       <div className="flex items-center gap-2">
-                        {isOpenAuth ? (
-                          <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        ) : (
-                          <Lock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                        )}
-                        <span className="truncate max-w-[180px]">
-                          {obs.ssid ? obs.ssid : <span className="text-neutral-400 italic font-normal">&lt;Hidden SSID&gt;</span>}
+                        <Signal className={`w-3.5 h-3.5 shrink-0 ${obs.rssi >= -60 ? 'text-emerald-600' : 'text-neutral-500'}`} />
+                        <span className="truncate max-w-[200px]">
+                          {obs.ssid || <span className="text-neutral-400 italic">&lt;Hidden Network&gt;</span>}
                         </span>
                       </div>
                     </td>
 
                     {/* BSSID */}
-                    <td className="py-1.5 px-2.5 text-neutral-700 font-mono tracking-tight">
+                    <td className="p-2 border-r border-[#141414] text-neutral-600 text-[11px]">
                       {obs.bssid}
                     </td>
 
-                    {/* Primary Channel */}
-                    <td className="py-1.5 px-2.5 font-bold text-[#141414]">
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>CH {obs.channel}</span>
-                        {isNonStdChannel && (
-                          <span className="text-[9px] px-1 py-0.2 border border-[#141414] bg-neutral-100 text-[#141414] font-normal">
-                            Bleed
-                          </span>
-                        )}
-                      </div>
+                    {/* Channel */}
+                    <td className="p-2 border-r border-[#141414] text-center font-bold">
+                      <span className={`px-2 py-0.5 border text-[11px] ${
+                        isNonOverlapping
+                          ? 'bg-neutral-100 text-[#141414] border-black/30'
+                          : 'bg-amber-100 text-amber-900 border-amber-600'
+                      }`}>
+                        CH {obs.channel}
+                      </span>
                     </td>
 
-                    {/* RSSI Signal Level */}
-                    <td className="py-1.5 px-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-14 font-mono font-bold ${getRssiColor(obs.rssi)}`}>
-                          {obs.rssi} dBm
-                        </span>
-                        <div className="w-14 h-1.5 bg-neutral-200 border border-black/20">
+                    {/* RSSI Signal Strength with Bar */}
+                    <td className="p-2 border-r border-[#141414] text-right">
+                      <div className="flex items-center justify-end gap-2.5">
+                        {/* Graphical mini bar */}
+                        <div className="w-20 bg-neutral-200 h-2 border border-black/20 overflow-hidden hidden sm:block">
                           <div
-                            className={`h-full ${
+                            className={`h-full transition-all duration-500 ${
                               obs.rssi >= -60
-                                ? 'bg-emerald-700'
+                                ? 'bg-emerald-600'
                                 : obs.rssi >= -75
-                                ? 'bg-blue-700'
-                                : obs.rssi >= -85
-                                ? 'bg-amber-600'
-                                : 'bg-[#D00]'
+                                ? 'bg-blue-600'
+                                : 'bg-rose-600'
                             }`}
-                            style={{ width: `${rssiPct}%` }}
+                            style={{ width: `${getRssiPercent(obs.rssi)}%` }}
                           />
                         </div>
+                        <span className={`text-[11px] w-14 font-mono ${getRssiColor(obs.rssi)}`}>
+                          {obs.rssi} dBm
+                        </span>
                       </div>
                     </td>
 
                     {/* Security */}
-                    <td className="py-1.5 px-2.5 text-neutral-700">
-                      <span className="px-1 py-0.5 border border-black/20 bg-neutral-100 text-[10px]">
-                        {obs.securityType}
-                      </span>
+                    <td className="p-2 border-r border-[#141414] text-center">
+                      <div className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-neutral-100 border border-black/20">
+                        {obs.securityType === 'OPEN' ? (
+                          <Unlock className="w-2.5 h-2.5 text-neutral-500" />
+                        ) : (
+                          <Lock className="w-2.5 h-2.5 text-neutral-700" />
+                        )}
+                        <span>{formatSecurity(obs.securityType)}</span>
+                      </div>
                     </td>
 
-                    {/* Source Origin */}
-                    <td className="py-1.5 px-2.5">
-                      <span
-                        className={`px-1.5 py-0.5 text-[9px] font-bold uppercase border border-[#141414] ${
-                          obs.source === 'SIMULATED'
-                            ? 'bg-neutral-100 text-[#141414]'
-                            : 'bg-emerald-100 text-emerald-900'
-                        }`}
-                      >
-                        {obs.source}
-                      </span>
-                    </td>
-
-                    {/* Timestamp */}
-                    <td className="py-1.5 px-2.5 text-right text-neutral-600 text-[10px] font-mono">
-                      {new Date(obs.timestamp).toLocaleTimeString()}
+                    {/* Last Seen */}
+                    <td className="p-2 text-right text-neutral-500 text-[10px]">
+                      Just now
                     </td>
                   </tr>
                 );

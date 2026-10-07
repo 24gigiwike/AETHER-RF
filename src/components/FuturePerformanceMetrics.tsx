@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, Clock, WifiOff, ArrowRightLeft, ShieldAlert } from 'lucide-react';
+import { Gauge, Clock, WifiOff, ArrowRightLeft } from 'lucide-react';
 import { NetworkPerformanceMetrics } from '../types/wifi';
 
 export const FuturePerformanceMetrics: React.FC = () => {
@@ -89,13 +89,6 @@ export const FuturePerformanceMetrics: React.FC = () => {
             <span>Awaiting probe integration</span>
           </div>
         </div>
-      </div>
-
-      <div className="p-2.5 bg-neutral-100 border border-[#141414] text-[11px] text-[#141414] font-mono flex items-start gap-2">
-        <ShieldAlert className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-        <p className="leading-snug">
-          <strong className="uppercase font-bold">Academic Integrity Notice:</strong> Telecommunications benchmarks for packet loss, latency, and throughput are deliberately unpopulated at this development stage. Fabricating values without physical measurement probes would breach experimental scientific integrity.
-        </p>
       </div>
     </section>
   );

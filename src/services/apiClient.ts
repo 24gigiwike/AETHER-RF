@@ -7,8 +7,7 @@ import {
   DerivedAnalysis,
   SimulatorEnvironmentProfile,
 } from '../types/wifi';
-import { generateSimulatedScan } from './simulator';
-import { processRawObservations } from './derivedParameters';
+import { liveScanner } from './wifiDataSource';
 
 export interface ScanResponse {
   batch: RawScanBatch;
@@ -22,23 +21,24 @@ export async function fetchLatestScan(): Promise<ScanResponse> {
       return await res.json();
     }
   } catch {
-    // Fallback to local evaluation if server endpoint is inaccessible
+    // Fallback to local scanner
   }
 
-  // Local fallback
-  const batch = generateSimulatedScan('MODERATE_DENSITY');
-  const derived = processRawObservations(batch.observations, batch.batchId, batch.timestamp);
-  return { batch, derived };
+  return liveScanner.getLatestScan();
 }
 
 export async function triggerScan(
-  profile: SimulatorEnvironmentProfile
+  profile?: SimulatorEnvironmentProfile
 ): Promise<ScanResponse> {
+  if (profile) {
+    liveScanner.setScenario(profile);
+  }
+
   try {
     const res = await fetch('/api/simulator/trigger', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile }),
+      body: JSON.stringify({ profile: profile || liveScanner.getScenario() }),
     });
     if (res.ok) {
       return await res.json();
@@ -47,9 +47,7 @@ export async function triggerScan(
     // Local fallback
   }
 
-  const batch = generateSimulatedScan(profile);
-  const derived = processRawObservations(batch.observations, batch.batchId, batch.timestamp);
-  return { batch, derived };
+  return liveScanner.sweepScan();
 }
 
 export async function fetchScanHistory(limit = 10): Promise<ScanResponse[]> {
@@ -63,3 +61,4 @@ export async function fetchScanHistory(limit = 10): Promise<ScanResponse[]> {
   }
   return [];
 }
+
