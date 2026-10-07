@@ -46,19 +46,22 @@ interface PersistentAPState {
   driftVelocity: number;
 }
 
-// Believable pool of SSIDs and MAC vendors matching prompt requirements
+// Believable pool of SSIDs and MAC vendors matching campus and regional networks
 const DEFAULT_AP_POOL: Omit<PersistentAPState, 'firstSeen' | 'lastSeen' | 'currentRssi' | 'driftVelocity'>[] = [
-  { ssid: 'Home_WiFi', bssid: 'A4:CF:12:8B:21:90', channel: 6, nominalRssi: -42, securityType: 'WPA2_PSK', presenceProbability: 0.99 },
-  { ssid: 'TP-Link_5A20', bssid: '50:D4:F7:5A:20:18', channel: 1, nominalRssi: -58, securityType: 'WPA2_PSK', presenceProbability: 0.98 },
+  { ssid: 'FUTO-SPESSE', bssid: '24:0A:C4:88:1A:01', channel: 6, nominalRssi: -46, securityType: 'WPA2_PSK', presenceProbability: 0.99 },
+  { ssid: 'FUTO NETWORK', bssid: '24:0A:C4:88:1A:02', channel: 1, nominalRssi: -54, securityType: 'WPA2_PSK', presenceProbability: 0.99 },
+  { ssid: 'FUTONET', bssid: '24:0A:C4:88:1A:03', channel: 11, nominalRssi: -50, securityType: 'WPA3_PSK', presenceProbability: 0.99 },
+  { ssid: 'Home_WiFi', bssid: 'A4:CF:12:8B:21:90', channel: 6, nominalRssi: -42, securityType: 'WPA2_PSK', presenceProbability: 0.98 },
+  { ssid: 'TP-Link_5A20', bssid: '50:D4:F7:5A:20:18', channel: 1, nominalRssi: -58, securityType: 'WPA2_PSK', presenceProbability: 0.97 },
   { ssid: 'MTN_Home', bssid: '70:97:41:88:C2:5A', channel: 6, nominalRssi: -65, securityType: 'WPA2_PSK', presenceProbability: 0.95 },
   { ssid: 'Airtel_4G', bssid: '9C:C9:EB:10:4F:7B', channel: 11, nominalRssi: -52, securityType: 'WPA2_PSK', presenceProbability: 0.97 },
   { ssid: 'NETGEAR', bssid: 'E0:91:F5:2A:4B:01', channel: 6, nominalRssi: -68, securityType: 'WPA2_PSK', presenceProbability: 0.92 },
   { ssid: 'Galaxy_Hotspot', bssid: 'F2:A0:D4:71:09:DE', channel: 1, nominalRssi: -72, securityType: 'WPA2_WPA3_PSK', presenceProbability: 0.85 },
-  { ssid: 'OfficeNet', bssid: '58:D9:D5:20:10:01', channel: 11, nominalRssi: -49, securityType: 'WPA3_PSK', presenceProbability: 0.99 },
+  { ssid: 'OfficeNet', bssid: '58:D9:D5:20:10:01', channel: 11, nominalRssi: -49, securityType: 'WPA3_PSK', presenceProbability: 0.96 },
   { ssid: 'DIRECT-HP', bssid: '10:BF:48:FA:CE:01', channel: 6, nominalRssi: -79, securityType: 'WPA2_PSK', presenceProbability: 0.90 },
-  { ssid: 'Home_5G_Fallback', bssid: 'A4:CF:12:8B:21:91', channel: 1, nominalRssi: -47, securityType: 'WPA2_PSK', presenceProbability: 0.98 },
+  { ssid: 'Home_5G_Fallback', bssid: 'A4:CF:12:8B:21:91', channel: 1, nominalRssi: -47, securityType: 'WPA2_PSK', presenceProbability: 0.95 },
   { ssid: 'Neighbour_WiFi', bssid: '28:6C:07:33:55:1A', channel: 6, nominalRssi: -75, securityType: 'WPA2_PSK', presenceProbability: 0.88 },
-  { ssid: 'Campus_Zone_IoT', bssid: '00:11:22:99:88:77', channel: 11, nominalRssi: -63, securityType: 'WPA2_PSK', presenceProbability: 0.95 },
+  { ssid: 'Campus_Zone_IoT', bssid: '00:11:22:99:88:77', channel: 11, nominalRssi: -63, securityType: 'WPA2_PSK', presenceProbability: 0.92 },
   { ssid: 'Starlink_Guest', bssid: '84:D8:1B:54:33:02', channel: 1, nominalRssi: -69, securityType: 'WPA2_PSK', presenceProbability: 0.80 },
   { ssid: 'Staff_Secure', bssid: 'CC:2D:E0:44:81:F9', channel: 11, nominalRssi: -55, securityType: 'WPA3_PSK', presenceProbability: 0.94 },
   { ssid: 'Smart_TV_Lounge', bssid: '20:DF:B9:87:65:43', channel: 6, nominalRssi: -78, securityType: 'WPA2_PSK', presenceProbability: 0.75 },

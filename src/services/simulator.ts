@@ -29,12 +29,17 @@ interface TemplateAP {
 // Preset environment templates representing real university / residential / lab topologies
 const SIMULATION_PROFILES: Record<SimulatorEnvironmentProfile, TemplateAP[]> = {
   LOW_DENSITY: [
-    { ssid: 'University-Quiet-Lab', bssid: '24:A4:3C:11:42:01', baseRssi: -58, channel: 1, securityType: 'WPA2_PSK' },
-    { ssid: 'Campus-Guest', bssid: '24:A4:3C:11:42:02', baseRssi: -64, channel: 6, securityType: 'OPEN' },
+    { ssid: 'FUTO-SPESSE', bssid: '24:0A:C4:88:1A:01', baseRssi: -52, channel: 6, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTO NETWORK', bssid: '24:0A:C4:88:1A:02', baseRssi: -58, channel: 1, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTONET', bssid: '24:0A:C4:88:1A:03', baseRssi: -62, channel: 11, securityType: 'WPA3_PSK' },
+    { ssid: 'University-Quiet-Lab', bssid: '24:A4:3C:11:42:01', baseRssi: -68, channel: 1, securityType: 'WPA2_PSK' },
     { ssid: 'Research-Annex', bssid: '70:4F:57:89:12:30', baseRssi: -79, channel: 11, securityType: 'WPA3_PSK' },
   ],
 
   MODERATE_DENSITY: [
+    { ssid: 'FUTO-SPESSE', bssid: '24:0A:C4:88:1A:01', baseRssi: -46, channel: 6, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTO NETWORK', bssid: '24:0A:C4:88:1A:02', baseRssi: -54, channel: 1, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTONET', bssid: '24:0A:C4:88:1A:03', baseRssi: -50, channel: 11, securityType: 'WPA3_PSK' },
     { ssid: 'Department_Main', bssid: '58:D9:D5:20:10:01', baseRssi: -52, channel: 1, securityType: 'WPA2_PSK' },
     { ssid: 'Faculty_5G_Fallback', bssid: '58:D9:D5:20:10:02', baseRssi: -61, channel: 1, securityType: 'WPA2_PSK' },
     { ssid: 'Lab_Workstation_Net', bssid: '00:1A:2B:3C:4D:5E', baseRssi: -72, channel: 1, securityType: 'WPA_PSK' },
@@ -47,7 +52,10 @@ const SIMULATION_PROFILES: Record<SimulatorEnvironmentProfile, TemplateAP[]> = {
   ],
 
   HIGH_CONGESTION: [
-    // Heavy contention on Channel 6 (Dormitory / crowded event center scenario)
+    // Heavy contention on Channel 6
+    { ssid: 'FUTO-SPESSE', bssid: '24:0A:C4:88:1A:01', baseRssi: -44, channel: 6, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTO NETWORK', bssid: '24:0A:C4:88:1A:02', baseRssi: -48, channel: 1, securityType: 'WPA2_PSK' },
+    { ssid: 'FUTONET', bssid: '24:0A:C4:88:1A:03', baseRssi: -52, channel: 11, securityType: 'WPA3_PSK' },
     { ssid: 'Dorm_A_Router', bssid: '30:23:03:01:00:10', baseRssi: -42, channel: 6, securityType: 'WPA2_PSK' },
     { ssid: 'Student_Room_104', bssid: '30:23:03:01:00:11', baseRssi: -49, channel: 6, securityType: 'WPA2_PSK' },
     { ssid: 'Gamers_Den_2.4G', bssid: 'A0:04:60:FE:ED:01', baseRssi: -53, channel: 6, securityType: 'WPA3_PSK' },
