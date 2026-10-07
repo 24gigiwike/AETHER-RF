@@ -46,11 +46,16 @@ interface PersistentAPState {
   driftVelocity: number;
 }
 
-// Believable pool of SSIDs and MAC vendors matching campus and regional networks
+// Believable pool of SSIDs and MAC vendors matching campus, personal devices, and regional networks
 const DEFAULT_AP_POOL: Omit<PersistentAPState, 'firstSeen' | 'lastSeen' | 'currentRssi' | 'driftVelocity'>[] = [
   { ssid: 'FUTO-SPESSE', bssid: '24:0A:C4:88:1A:01', channel: 6, nominalRssi: -46, securityType: 'WPA2_PSK', presenceProbability: 0.99 },
   { ssid: 'FUTO NETWORK', bssid: '24:0A:C4:88:1A:02', channel: 1, nominalRssi: -54, securityType: 'WPA2_PSK', presenceProbability: 0.99 },
   { ssid: 'FUTONET', bssid: '24:0A:C4:88:1A:03', channel: 11, nominalRssi: -50, securityType: 'WPA3_PSK', presenceProbability: 0.99 },
+  { ssid: 'INFINIX NOTE 40X 5G', bssid: '3C:28:6D:77:4A:12', channel: 6, nominalRssi: -58, securityType: 'WPA2_PSK', presenceProbability: 0.96 },
+  { ssid: "Chukwuemeka's S22", bssid: 'F4:D4:88:99:BC:33', channel: 1, nominalRssi: -62, securityType: 'WPA3_PSK', presenceProbability: 0.95 },
+  { ssid: 'levi', bssid: '78:4F:43:AA:88:99', channel: 11, nominalRssi: -66, securityType: 'WPA2_PSK', presenceProbability: 0.94 },
+  { ssid: 'Nothing phone (1)', bssid: '90:06:28:11:4E:22', channel: 6, nominalRssi: -60, securityType: 'WPA2_WPA3_PSK', presenceProbability: 0.95 },
+  { ssid: 'safe', bssid: 'B8:27:EB:55:7A:88', channel: 1, nominalRssi: -70, securityType: 'WPA2_PSK', presenceProbability: 0.92 },
   { ssid: 'Home_WiFi', bssid: 'A4:CF:12:8B:21:90', channel: 6, nominalRssi: -42, securityType: 'WPA2_PSK', presenceProbability: 0.98 },
   { ssid: 'TP-Link_5A20', bssid: '50:D4:F7:5A:20:18', channel: 1, nominalRssi: -58, securityType: 'WPA2_PSK', presenceProbability: 0.97 },
   { ssid: 'MTN_Home', bssid: '70:97:41:88:C2:5A', channel: 6, nominalRssi: -65, securityType: 'WPA2_PSK', presenceProbability: 0.95 },
