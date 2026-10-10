@@ -16,12 +16,14 @@ interface ChannelMetricsViewProps {
   channels: Record<number, ChannelMetrics>;
   worstChannel: number;
   recommendedChannel: number;
+  datasetLabel: string;
 }
 
 export const ChannelMetricsView: React.FC<ChannelMetricsViewProps> = ({
   channels,
   worstChannel,
   recommendedChannel,
+  datasetLabel,
 }) => {
   const [metricMode, setMetricMode] = useState<'congestion' | 'density' | 'rssi'>('congestion');
 
@@ -55,6 +57,9 @@ export const ChannelMetricsView: React.FC<ChannelMetricsViewProps> = ({
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#141414] font-mono">
             2.4 GHz Spectral Channel Distribution &amp; Congestion Analysis
           </h2>
+          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 border border-[#141414] bg-neutral-100">
+            {datasetLabel}
+          </span>
         </div>
 
         {/* View Metric Mode Switcher */}

@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+backend/.venv/
+# Local recordings, exports, and the pseudonym salt. The trained model stays tracked.
+backend/data/*
+!backend/data/model/
+__pycache__/
+*.pyc

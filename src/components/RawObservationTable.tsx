@@ -1,6 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RawWiFiObservation } from '../types/wifi';
 import { Search, Filter, ArrowUpDown, Lock, Unlock, Radio, Signal, Clock } from 'lucide-react';
+
+function formatObservedAge(timestamp: number, now: number): string {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    return '—';
+  }
+  const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
+  if (seconds < 5) return 'Just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes}m ago`;
+}
 
 interface RawObservationTableProps {
   observations: RawWiFiObservation[];
@@ -17,6 +28,12 @@ export const RawObservationTable: React.FC<RawObservationTableProps> = ({
   const [selectedChannelFilter, setSelectedChannelFilter] = useState<string>('ALL');
   const [sortField, setSortField] = useState<'rssi' | 'channel' | 'ssid'>('rssi');
   const [sortAsc, setSortAsc] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Filter & sort
   const filteredObservations = useMemo(() => {
@@ -229,7 +246,7 @@ export const RawObservationTable: React.FC<RawObservationTableProps> = ({
 
                     {/* Last Seen */}
                     <td className="p-2 text-right text-neutral-500 text-[10px]">
-                      Just now
+                      {formatObservedAge(obs.timestamp, now)}
                     </td>
                   </tr>
                 );

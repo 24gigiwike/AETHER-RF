@@ -11,7 +11,8 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { DerivedAnalysis, InterferenceSeverity, ChannelMetrics } from '../types/wifi';
+import { DerivedAnalysis, DataSourceOrigin, Esp32LinkState, InterferenceSeverity, ChannelMetrics } from '../types/wifi';
+import { ESP32_LINK_LABEL } from '../services/esp32Api';
 
 interface DerivedSummaryProps {
   derived: DerivedAnalysis;
@@ -19,6 +20,8 @@ interface DerivedSummaryProps {
   isScanning: boolean;
   scanCount: number;
   lastScanTimeMs: number;
+  source: DataSourceOrigin;
+  linkState: Esp32LinkState | null;
 }
 
 const SEVERITY_CONFIG: Record<
@@ -61,6 +64,8 @@ export const DerivedSummary: React.FC<DerivedSummaryProps> = ({
   isScanning,
   scanCount,
   lastScanTimeMs,
+  source,
+  linkState,
 }) => {
   const severityInfo = SEVERITY_CONFIG[derived.overallSeverity] || SEVERITY_CONFIG.NORMAL;
   const worstChannelData = derived.channels[derived.worstChannel];
@@ -82,9 +87,12 @@ export const DerivedSummary: React.FC<DerivedSummaryProps> = ({
     (c) => c.apCount > 0
   ).length;
 
-  const strongestOverallRssi = Math.max(
-    ...(Object.values(derived.channels) as ChannelMetrics[]).map((c) => c.strongestRssi)
-  );
+  const occupiedRssi = (Object.values(derived.channels) as ChannelMetrics[])
+    .filter((channel) => channel.apCount > 0)
+    .map((channel) => channel.strongestRssi);
+  const strongestOverallRssi = occupiedRssi.length > 0 ? Math.max(...occupiedRssi) : null;
+  const hardwareMode = source === 'ESP32_HARDWARE';
+  const linkLabel = linkState ? ESP32_LINK_LABEL[linkState] : 'ACTIVE';
 
   return (
     <section id="derived-telemetry-summary" className="space-y-2.5 font-mono">
@@ -92,14 +100,20 @@ export const DerivedSummary: React.FC<DerivedSummaryProps> = ({
       <div className="bg-[#141414] text-white p-3 border border-black flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="opacity-70">Wi-Fi Scanner:</span>
-            <span className="font-bold text-emerald-400">ACTIVE</span>
+            <span className={`w-2 h-2 rounded-full ${hardwareMode && linkState !== 'fresh' ? 'bg-amber-300' : 'bg-emerald-400 animate-pulse'}`}></span>
+            <span className="opacity-70">{hardwareMode ? 'ESP32 link:' : 'Wi-Fi Scanner:'}</span>
+            <span className={`font-bold ${hardwareMode && linkState !== 'fresh' ? 'text-amber-300' : 'text-emerald-400'}`}>
+              {hardwareMode ? linkLabel : 'ACTIVE'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 border-l border-white/20 pl-4">
+            <span className="opacity-70">Interference:</span>
+            <span className="font-bold text-white">{derived.overallSeverity}</span>
           </div>
           <div className="flex items-center gap-2 border-l border-white/20 pl-4">
             <span className="opacity-70">Scanner Status:</span>
             <span className={`font-bold ${isScanning ? 'text-amber-400 animate-pulse' : 'text-emerald-300'}`}>
-              {isScanning ? 'SCANNING...' : 'MONITORING'}
+              {isScanning ? 'SCANNING...' : hardwareMode && linkState !== 'fresh' ? 'HOLDING LAST SCAN' : 'MONITORING'}
             </span>
           </div>
           <div className="flex items-center gap-2 border-l border-white/20 pl-4">
@@ -112,7 +126,9 @@ export const DerivedSummary: React.FC<DerivedSummaryProps> = ({
           </div>
           <div className="flex items-center gap-2 border-l border-white/20 pl-4 hidden lg:flex">
             <span className="opacity-70">Strongest Signal:</span>
-            <span className="font-bold text-emerald-400">{strongestOverallRssi} dBm</span>
+            <span className="font-bold text-emerald-400">
+              {strongestOverallRssi == null ? '—' : `${strongestOverallRssi} dBm`}
+            </span>
           </div>
         </div>
 
@@ -235,7 +251,9 @@ export const DerivedSummary: React.FC<DerivedSummaryProps> = ({
       <div id="classification-rationale-box" className="p-3 bg-white border border-[#141414] text-xs text-[#141414]">
         <div className="font-bold uppercase tracking-wider text-[11px] mb-1.5 flex items-center justify-between border-b border-black/10 pb-1">
           <span>AI Mitigation &amp; Telemetry Evaluation Logic:</span>
-          <span className="text-[10px] opacity-60 font-normal">REAL-TIME DETERMINISTIC ENGINE</span>
+          <span className="text-[10px] opacity-60 font-normal">
+            {hardwareMode ? 'HEURISTIC FROM MEASURED SCANS — NOT A TRAINED MODEL' : 'REAL-TIME DETERMINISTIC ENGINE'}
+          </span>
         </div>
         <ul className="list-disc list-inside space-y-1 text-neutral-800 text-[11px]">
           {derived.classificationRationale.map((reason, idx) => (

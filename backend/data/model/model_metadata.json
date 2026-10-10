@@ -1,0 +1,74 @@
+{
+  "modelName": "Random Forest",
+  "predictionSource": "heuristic-trained demonstration model",
+  "randomSeed": 42,
+  "features": [
+    "total_ap_count",
+    "occupied_channel_count",
+    "max_channel_ap_count",
+    "mean_rssi_dbm",
+    "strongest_rssi_dbm",
+    "max_overlap_weighted_ap_count"
+  ],
+  "labelRule": "Heuristic demonstration labels, not measured interference. risk = 0.45*min(AP count/10, 1) + 0.20*min(occupied channels/8, 1) + 0.20*clamped strongest-RSSI strength + 0.15*clamped max channel overlap. LOW below 0.35, MEDIUM below 0.62, otherwise HIGH. Empty RSSI uses -100 dBm and contributes no signal strength.",
+  "labelsAreMeasuredInterference": false,
+  "realRecordedScans": 12,
+  "realSessionCount": 1,
+  "realHeuristicLabelCounts": {
+    "LOW": 12
+  },
+  "syntheticExampleCounts": {
+    "LOW": 48,
+    "MEDIUM": 48,
+    "HIGH": 48
+  },
+  "trainingRows": 112,
+  "evaluation": {
+    "reliableInterferenceEvaluation": false,
+    "reason": "Only one recorded scan session is available, and its heuristic labels are a single class. Session-separated evaluation cannot estimate interference detection. The scores below measure how well the forest imitates the heuristic on synthetic feature vectors held out from training.",
+    "split": "30 percent of synthetic rows, stratified, seed 42. Recorded rows were added only to training.",
+    "accuracy": 1.0,
+    "precision": {
+      "LOW": 1.0,
+      "MEDIUM": 1.0,
+      "HIGH": 1.0
+    },
+    "recall": {
+      "LOW": 1.0,
+      "MEDIUM": 1.0,
+      "HIGH": 1.0
+    },
+    "f1": {
+      "LOW": 1.0,
+      "MEDIUM": 1.0,
+      "HIGH": 1.0
+    },
+    "support": {
+      "LOW": 15,
+      "MEDIUM": 15,
+      "HIGH": 14
+    },
+    "confusionMatrixLabels": [
+      "LOW",
+      "MEDIUM",
+      "HIGH"
+    ],
+    "confusionMatrix": [
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        0,
+        15,
+        0
+      ],
+      [
+        0,
+        0,
+        14
+      ]
+    ]
+  }
+}

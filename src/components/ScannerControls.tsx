@@ -10,9 +10,14 @@ import {
   Clock,
   Eye,
 } from 'lucide-react';
-import { SimulatorEnvironmentProfile } from '../types/wifi';
+import { DashboardDataSource, Esp32LinkState, SimulatorEnvironmentProfile } from '../types/wifi';
+import { ESP32_LINK_LABEL } from '../services/esp32Api';
 
 interface ScannerControlsProps {
+  dataSource: DashboardDataSource;
+  onDataSourceChange: (source: DashboardDataSource) => void;
+  linkState: Esp32LinkState;
+  linkDetail: string;
   currentProfile: SimulatorEnvironmentProfile;
   onProfileChange: (profile: SimulatorEnvironmentProfile) => void;
   onTriggerScan: () => void;
@@ -25,10 +30,30 @@ interface ScannerControlsProps {
   lastScanTimeMs: number;
   detectedCount: number;
   activeChannelsCount: number;
-  strongestRssi: number;
+  strongestRssi: number | null;
   interferenceSeverity: string;
   congestionScorePct: number;
   recommendedChannel: number;
+}
+
+function hardwareBannerDetail(linkState: Esp32LinkState, scanCount: number, elapsedSec: number): string {
+  if (linkState === 'waiting') {
+    return 'The ESP32 is connected. Waiting for the first measured scan. Simulation data is not being substituted.';
+  }
+  if (linkState === 'unavailable') {
+    return 'FastAPI is not reachable. The last ESP32 scan, if any, stays on screen. Choose Simulation to use the emulator.';
+  }
+  if (linkState === 'disconnected') {
+    return scanCount === 0
+      ? 'The serial link is down and no ESP32 scan has been stored. Simulation is available from the data-source control.'
+      : `Serial link down. Showing the last measured scan from ${elapsedSec}s ago. This is not a new sweep.`;
+  }
+  if (linkState === 'stale') {
+    return `The ESP32 is connected, but the stored scan is stale (${elapsedSec}s old). No new sweep is being claimed.`;
+  }
+  return scanCount === 0
+    ? 'Polling FastAPI every 4 seconds for a new ESP32 scan.'
+    : `Measured scan #${scanCount} • Last hardware scan ${elapsedSec === 0 ? 'just now' : `${elapsedSec}s ago`} • Same scan is not counted twice.`;
 }
 
 const ENVIRONMENT_PROFILES: Record<
@@ -68,6 +93,10 @@ const ENVIRONMENT_PROFILES: Record<
 };
 
 export const ScannerControls: React.FC<ScannerControlsProps> = ({
+  dataSource,
+  onDataSourceChange,
+  linkState,
+  linkDetail,
   currentProfile,
   onProfileChange,
   onTriggerScan,
@@ -85,7 +114,14 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
   congestionScorePct,
   recommendedChannel,
 }) => {
+  const hardwareMode = dataSource === 'esp32';
   const profileInfo = ENVIRONMENT_PROFILES[currentProfile] || ENVIRONMENT_PROFILES.MODERATE_DENSITY;
+  const hardwareQuiet = hardwareMode && linkState !== 'fresh';
+  const statusWord = hardwareMode
+    ? ESP32_LINK_LABEL[linkState]
+    : isScanning
+      ? 'SCANNING'
+      : 'ACTIVE';
 
   // Format relative seconds
   const [elapsedSec, setElapsedSec] = React.useState(0);
@@ -101,6 +137,42 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
 
   return (
     <section id="live-scanner-dashboard-panel" className="bg-white border border-[#141414] p-3.5 space-y-3 font-mono">
+      <div className="flex flex-col gap-2 border border-[#141414] bg-neutral-50 px-2.5 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wider font-bold text-[#141414]">Data source</span>
+          <button
+            id="btn-source-esp32"
+            type="button"
+            onClick={() => onDataSourceChange('esp32')}
+            className={`px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold border border-[#141414] cursor-pointer ${
+              hardwareMode ? 'bg-[#141414] text-white' : 'bg-white text-[#141414] hover:bg-neutral-100'
+            }`}
+          >
+            ESP32 Live
+          </button>
+          <button
+            id="btn-source-simulation"
+            type="button"
+            onClick={() => onDataSourceChange('simulation')}
+            className={`px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold border border-[#141414] cursor-pointer ${
+              hardwareMode ? 'bg-white text-[#141414] hover:bg-neutral-100' : 'bg-[#141414] text-white'
+            }`}
+          >
+            Simulation
+          </button>
+        </div>
+        <p id="esp32-link-status" className="text-[10px] uppercase tracking-wide text-[#141414]">
+          {hardwareMode ? (
+            <>
+              <span className="font-bold">{ESP32_LINK_LABEL[linkState]}</span>
+              <span className="text-neutral-600"> — {linkDetail}</span>
+            </>
+          ) : (
+            <span className="font-bold">Simulation — local RF emulator, separate from ESP32 history</span>
+          )}
+        </p>
+      </div>
+
       {/* Dynamic Live Banner with Animated Scanning Radar Indicator */}
       <div className={`p-3 border border-[#141414] transition-all duration-300 ${
         isScanning ? 'bg-amber-50 border-amber-600' : 'bg-neutral-900 text-white border-black'
@@ -125,24 +197,30 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 border ${
-                  isScanning 
-                    ? 'bg-amber-600 text-white border-amber-700' 
-                    : 'bg-emerald-600 text-white border-emerald-700'
+                  isScanning
+                    ? 'bg-amber-600 text-white border-amber-700'
+                    : hardwareQuiet
+                      ? 'bg-amber-700 text-white border-amber-800'
+                      : 'bg-emerald-600 text-white border-emerald-700'
                 }`}>
-                  {isScanning ? 'SWEEPING SPECTRUM' : 'MONITOR ACTIVE'}
+                  {isScanning ? 'SWEEPING SPECTRUM' : hardwareMode ? 'ESP32 LINK' : 'MONITOR ACTIVE'}
                 </span>
                 <span className={`text-xs font-bold uppercase tracking-tight ${
                   isScanning ? 'text-amber-900' : 'text-neutral-200'
                 }`}>
                   {isScanning
                     ? 'Scanning Nearby Wi-Fi Networks...'
-                    : `Scan Complete — ${detectedCount} Networks Detected`}
+                    : hardwareMode
+                      ? `${ESP32_LINK_LABEL[linkState]} — ${detectedCount} measured networks`
+                      : `Scan Complete — ${detectedCount} Networks Detected`}
                 </span>
               </div>
               <p className={`text-[11px] mt-0.5 ${isScanning ? 'text-amber-800' : 'text-neutral-400'}`}>
-                {isScanning 
+                {isScanning
                   ? 'Listening for IEEE 802.11 beacon frames across 2.4 GHz channels 1–13...'
-                  : `Cycle #${scanCount} finished • Next automated sweep queued in ~${scanIntervalSec}s • Last scan: ${elapsedSec === 0 ? 'just now' : `${elapsedSec}s ago`}`}
+                  : hardwareMode
+                    ? hardwareBannerDetail(linkState, scanCount, elapsedSec)
+                    : `Cycle #${scanCount} finished • Next automated sweep queued in ~${scanIntervalSec}s • Last scan: ${elapsedSec === 0 ? 'just now' : `${elapsedSec}s ago`}`}
               </p>
             </div>
           </div>
@@ -153,7 +231,7 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
               isScanning ? 'bg-white border-amber-400 text-amber-900' : 'bg-white/10 border-white/20 text-neutral-200'
             }`}>
               <span className="opacity-60">STATUS: </span>
-              <span className="font-bold">{isScanning ? 'SCANNING' : 'ACTIVE'}</span>
+              <span className="font-bold">{statusWord}</span>
             </div>
             <div className={`px-2.5 py-1 border ${
               isScanning ? 'bg-white border-amber-400 text-amber-900' : 'bg-white/10 border-white/20 text-neutral-200'
@@ -171,7 +249,7 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
               isScanning ? 'bg-white border-amber-400 text-amber-900' : 'bg-white/10 border-white/20 text-neutral-200'
             }`}>
               <span className="opacity-60">PEAK RSSI: </span>
-              <span className="font-bold text-emerald-400">{strongestRssi} dBm</span>
+              <span className="font-bold text-emerald-400">{strongestRssi == null ? '—' : `${strongestRssi} dBm`}</span>
             </div>
           </div>
         </div>
@@ -192,8 +270,9 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
           <select
             id="select-env-scenario"
             value={currentProfile}
+            disabled={hardwareMode}
             onChange={(e) => onProfileChange(e.target.value as SimulatorEnvironmentProfile)}
-            className="w-full text-xs bg-white hover:bg-neutral-50 border border-[#141414] px-2.5 py-1.5 text-[#141414] focus:outline-none focus:ring-1 focus:ring-[#141414] cursor-pointer"
+            className="w-full text-xs bg-white hover:bg-neutral-50 border border-[#141414] px-2.5 py-1.5 text-[#141414] focus:outline-none focus:ring-1 focus:ring-[#141414] cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500"
           >
             {Object.entries(ENVIRONMENT_PROFILES).map(([key, info]) => (
               <option key={key} value={key}>
@@ -202,7 +281,9 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
             ))}
           </select>
           <p className="text-[10px] text-neutral-600 truncate">
-            {profileInfo.description}
+            {hardwareMode
+              ? 'Scenario presets stay with Simulation and do not alter ESP32 measurements.'
+              : profileInfo.description}
           </p>
         </div>
 
@@ -214,9 +295,10 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
             </label>
             <select
               id="select-scan-cadence"
-              value={scanIntervalSec}
+              value={hardwareMode ? 4 : scanIntervalSec}
+              disabled={hardwareMode}
               onChange={(e) => onIntervalChange(Number(e.target.value))}
-              className="w-full text-xs bg-white border border-[#141414] px-2 py-1.5 text-[#141414] cursor-pointer"
+              className="w-full text-xs bg-white border border-[#141414] px-2 py-1.5 text-[#141414] cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500"
             >
               <option value={3}>3 Seconds (Fast)</option>
               <option value={4}>4 Seconds (Standard)</option>
@@ -230,15 +312,18 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
             <button
               id="btn-toggle-auto-scan"
               onClick={onToggleAutoScan}
-              className={`h-[31px] px-3 text-[10px] uppercase font-bold tracking-wider border border-[#141414] flex items-center gap-1.5 cursor-pointer transition-colors ${
-                autoScan
-                  ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                  : 'bg-white text-[#141414] hover:bg-neutral-100'
+              disabled={hardwareMode}
+              className={`h-[31px] px-3 text-[10px] uppercase font-bold tracking-wider border border-[#141414] flex items-center gap-1.5 cursor-pointer transition-colors disabled:cursor-not-allowed ${
+                hardwareMode
+                  ? 'bg-emerald-700 text-white'
+                  : autoScan
+                    ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                    : 'bg-white text-[#141414] hover:bg-neutral-100'
               }`}
-              title={autoScan ? 'Click to Pause Continuous Scanning' : 'Click to Enable Continuous Auto-Scanning'}
+              title={hardwareMode ? 'ESP32 live mode polls FastAPI every 4 seconds' : autoScan ? 'Click to Pause Continuous Scanning' : 'Click to Enable Continuous Auto-Scanning'}
             >
-              <RefreshCw className={`w-3 h-3 ${autoScan ? 'animate-spin' : ''}`} />
-              <span>{autoScan ? 'Active' : 'Paused'}</span>
+              <RefreshCw className={`w-3 h-3 ${!hardwareMode && autoScan ? 'animate-spin' : ''}`} />
+              <span>{hardwareMode ? '4s Poll' : autoScan ? 'Active' : 'Paused'}</span>
             </button>
           </div>
         </div>
@@ -252,7 +337,7 @@ export const ScannerControls: React.FC<ScannerControlsProps> = ({
             className="w-full h-[31px] flex items-center justify-center gap-2 px-3 text-[10px] uppercase tracking-widest font-bold bg-[#141414] hover:bg-[#2c2c2c] disabled:bg-neutral-300 disabled:text-neutral-500 text-white transition-colors cursor-pointer disabled:cursor-not-allowed border border-[#141414]"
           >
             <Signal className={`w-3.5 h-3.5 ${isScanning ? 'animate-bounce text-amber-400' : 'text-emerald-400'}`} />
-            <span>{isScanning ? 'Scanning...' : 'Scan Now'}</span>
+            <span>{isScanning ? 'Scanning...' : hardwareMode ? 'Refresh' : 'Scan Now'}</span>
           </button>
         </div>
       </div>

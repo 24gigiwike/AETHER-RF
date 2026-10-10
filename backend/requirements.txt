@@ -1,0 +1,6 @@
+fastapi==0.143.0
+uvicorn==0.54.0
+pyserial==3.5
+scikit-learn==1.7.2
+pandas==2.3.3
+joblib==1.5.2

@@ -6,8 +6,10 @@ interface HeaderProps {
   source: DataSourceOrigin;
   batchId: string;
   timestamp: number;
-  scanDurationMs: number;
+  scanDurationMs: number | null;
   isScanning: boolean;
+  connectionLabel: string;
+  connectionTone: 'live' | 'warn' | 'down';
   onOpenArchitecture: () => void;
   onOpenEsp32Modal: () => void;
 }
@@ -18,10 +20,20 @@ export const Header: React.FC<HeaderProps> = ({
   timestamp,
   scanDurationMs,
   isScanning,
+  connectionLabel,
+  connectionTone,
   onOpenArchitecture,
   onOpenEsp32Modal,
 }) => {
   const isHardware = source === 'ESP32_HARDWARE';
+  const dotClass =
+    isScanning
+      ? 'bg-amber-400 animate-ping'
+      : connectionTone === 'down'
+        ? 'bg-rose-400'
+        : connectionTone === 'warn'
+          ? 'bg-amber-400 animate-pulse'
+          : 'bg-emerald-400 animate-pulse';
 
   return (
     <header id="main-header" className="header-gradient text-white border-b border-black sticky top-0 z-30 shadow-md">
@@ -54,26 +66,24 @@ export const Header: React.FC<HeaderProps> = ({
             id="data-source-status-badge"
             className="flex items-center gap-2 bg-white/10 px-3 py-1.5 border border-white/20"
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isScanning ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'
-              }`}
-            />
+            <span className={`w-2 h-2 rounded-full ${dotClass}`} />
             <span className="text-[10px] uppercase font-bold tracking-tight font-mono">
-              {isScanning ? 'Scanning RF Spectrum...' : isHardware ? 'ESP32 Receiver Active' : 'Wi-Fi Scanner: Active'}
+              {isScanning ? 'Scanning RF Spectrum...' : connectionLabel}
             </span>
           </div>
 
           {/* Hardware Target Readout */}
           <div className="hidden sm:block text-right font-mono border-r border-white/20 pr-3">
             <p className="text-[9px] uppercase opacity-60">Hardware Receiver</p>
-            <p className="text-xs font-bold text-white tracking-tight">ESP32-S3 Radio PHY</p>
+            <p className="text-xs font-bold text-white tracking-tight">
+              {isHardware ? 'ESP32 Live' : 'Simulation'}
+            </p>
           </div>
 
           {/* Sweep Duration */}
           <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 border border-white/20 text-[10px] font-mono text-white/80">
             <Activity className="w-3 h-3 text-orange-400" />
-            <span>Cycle: {scanDurationMs}ms</span>
+            <span>{scanDurationMs == null ? 'Cycle: n/a' : `Cycle: ${scanDurationMs}ms`}</span>
           </div>
 
           {/* Quick Action: ESP32 Hardware Integration Spec */}

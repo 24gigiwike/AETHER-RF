@@ -21,7 +21,22 @@ export type WiFiSecurityType =
   | 'WPA_WPA2_PSK' 
   | 'WPA3_PSK'
   | 'WPA2_WPA3_PSK'
+  | 'SECURED'
   | 'UNKNOWN';
+
+/** Dashboard selection. Simulation and ESP32 live data are never combined. */
+export type DashboardDataSource = 'esp32' | 'simulation';
+
+/**
+ * Hardware link, kept separate from interference severity.
+ * `unavailable` means the FastAPI process could not be reached.
+ */
+export type Esp32LinkState =
+  | 'fresh'
+  | 'stale'
+  | 'disconnected'
+  | 'waiting'
+  | 'unavailable';
 
 /**
  * Sensor source origin flag
@@ -73,8 +88,11 @@ export interface RawScanBatch {
   /** Epoch timestamp of batch completion */
   timestamp: number;
 
-  /** Duration of the channel sweep in milliseconds */
-  scanDurationMs: number;
+  /**
+   * Duration of the channel sweep in milliseconds.
+   * Null when the sensor did not report a duration. Do not substitute a guess.
+   */
+  scanDurationMs: number | null;
 
   /** Sensor identifier or MAC */
   sensorId: string;
